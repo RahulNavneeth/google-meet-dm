@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="index.css" />
+	<title>Google Meet DM</title>
+</head>
+
+<body>
+	<div class="__container">
+		<div class="__home" id="__home">
+			<div class="__head">
+				<div class="__welcome_user" id="wl-u"><!--WELCOME--></div>
+				<div class="__room_container">(Room ID: <span id="room-id"><!--ROOM ID--></span>)</div>
+			</div>
+			<div class="__user_container" id="user-cont"> <!--USER CONTAINER--> </div>
+			<!--<button id="btn">TEST BTN</button>-->
+		</div>
+		<div class="__invite_mail" id="__invite_mail">
+			<button class="__return" id="__invite_mail_return_btn" id="__invite_mail_return">&larr;
+				home</button>
+			<div class="__input_mail_input_cont">
+				<input class="__input_text" id="__invite_mail_input" id="__invite_mail_input" type="email"
+					placeholder="email" />
+				<button class="__invite_mail_input_btn" id="__invite_mail_input_btn">invite!</button>
+			</div>
+			<div class="__error_text" id="__invite_mail_input_error"><!--ERROR--></div>
+		</div>
+	</div>
+	<!--script src="https://smtpjs.com/v3/smtp.js" />-->
+	<script src="index.js"></script>
+</body>
+
+</html>
