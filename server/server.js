@@ -1,5 +1,6 @@
 import { WebSocketServer } from "ws"
 import nodemailer from 'nodemailer';
+import { START_CONVO } from "./template-message.js"
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -17,7 +18,10 @@ const transporter = nodemailer.createTransport({
 	from: process.env.SENDER_MAIL
 });
 
-let DATA = {}
+let DATA = {
+	conversation: {},
+	users: {}
+}
 
 function sendMail(mail_id, user_id, link_id) {
 	return new Promise((resolve, reject) => {
@@ -61,20 +65,25 @@ ws.on("connection", (socket) => {
 				break;
 			}
 			case "check_user_exist": {
-				if (Object.keys(DATA).includes(`${data["link_id"]}-${data["user_id"]}`)) {
+				if (DATA["users"][`${data["link_id"]}-${data["user_id"]}`]) {
 					socket.send(JSON.stringify({ type: "check_user_exist", success: true }));
-					break;
+					return;
 				}
-				socket.send(JSON.stringify({ type: "check_user_exist", success: false, message: "User not found" }));
+				socket.send(JSON.stringify({ type: "check_user_exist", success: false }));
 				break;
 			}
 			case "create_user": {
-				try {
-					DATA[`${data["link_id"]}-${data["user_id"]}`] = {};
-					socket.send(JSON.stringify({ type: "create_user", success: true }));
-				} catch (e) {
-					socket.send(JSON.stringify({ type: "create_user", success: false, message: e }));
-				}
+				DATA["users"][`${data["link_id"]}-${data["user_id"]}`] = { conversation: [] };
+				socket.send(JSON.stringify({ type: "create_user", success: true }));
+				break;
+			}
+			case "start_convo": {
+				const CONVO_ID_SORT_USER = [data["user_id"], data["convo_user_id"]].sort().join("-");
+				const CONVO_ID = `${data["link_id"]}-${CONVO_ID_SORT_USER}`;
+				DATA["users"][`${data["link_id"]}-${data["user_id"]}`]["conversation"].push(CONVO_ID);
+				DATA["users"][`${data["link_id"]}-${data["convo_user_id"]}`]["conversation"].push(CONVO_ID);
+				DATA["conversation"][CONVO_ID] = [START_CONVO(data["user_id"], data["convo_user_id"])];
+				socket.send(JSON.stringify({ type: "start_convo", success: true, data: DATA["conversation"][CONVO_ID] }));
 				break;
 			}
 		}

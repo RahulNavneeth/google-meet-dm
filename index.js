@@ -47,6 +47,11 @@ async function create_user_server() {
 	return res["success"];
 }
 
+async function start_convo_user(user_id) {
+	WS.send(JSON.stringify({ type: "start_convo", user_id: USER_MAIN, link_id: LINK_ID, convo_user_id: user_id }));
+	return await ws_global_actions("start_convo");
+}
+
 async function sendMail(mail_id) {
 	WS.send(JSON.stringify({ type: "send_mail", user_id: USER_MAIN, link_id: LINK_ID, mail_id: mail_id }));
 	return await ws_global_actions("send_mail");
@@ -112,8 +117,16 @@ function build_HTML_home(data) {
 				PEOPLE_NODE.innerHTML = `
 						<div class=\"__user __start_convo\">
 							<div>${i + 1}. ${USER_ID}</div>
-							<button class=\"__start_convo_btn\">send (hi👋)</button>
+							<button user-id=\"${USER_ID}\" class=\"__start_convo_btn\">send (hi👋)</button>
 		    			</div>`;
+				break;
+			}
+			case "CHAT": {
+				PEOPLE_NODE.innerHTML = `
+						<button class=\"__user __chat\">
+							<div>${i + 1}. ${USER_ID}</div>
+							<div>${data[i]["length"]}</div>
+		    			</button>`;
 				break;
 			}
 		}
@@ -122,6 +135,11 @@ function build_HTML_home(data) {
 	}
 
 	// alert(JSON.stringify(data));
+	return;
+}
+
+function build_HTML_chat(convo_user_id, data) {
+	document.body.innerHTML = convo_user_id + " : " + JSON.stringify(data);
 	return;
 }
 
@@ -158,19 +176,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		let user_data_server = {};
 		user_data_server = (await fetch_users_server())["data"];
+		alert(JSON.stringify(user_data_server));
 
 		let build_data = [];
 
 		for (let i = 0; i < user_data.length; i++) {
-			if (!Object.keys(user_data_server).includes(`${LINK_ID}-${user_data[i]}`)) {
-				build_data.push({ user_id: user_data[i], type: (!i ? "NO_EXT" : "START_CONVO") })
+			if (!Object.keys(user_data_server["users"]).includes(`${LINK_ID}-${user_data[i]}`)) {
+				build_data.push({ user_id: user_data[i], type: ("NO_EXT") })
 				continue;
 			}
-			if (!Object.keys(user_data_server[`${LINK_ID}-${USER_MAIN}`]).includes(user_data[i])) {
+			const CONVO_ID_USER_SORT = [USER_MAIN, user_data[i]].sort().join("-");
+			const CONVO_ID = `${LINK_ID}-${CONVO_ID_USER_SORT}`;
+			//alert(ID);
+			if (!Object.keys(user_data_server["conversation"]).includes(CONVO_ID)) {
 				build_data.push({ user_id: user_data[i], type: "START_CONVO" })
 				continue;
 			}
-			build_data.push({ user_id: user_data[i], type: "CHAT", length: user_data_server[USER_MAIN][user_data[i]].length })
+			build_data.push({ user_id: user_data[i], type: "CHAT", length: user_data_server["conversation"][CONVO_ID].length })
 		}
 
 		build_HTML_home(build_data);
@@ -185,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // button functions
 
 function button_utils() {
-	document.getElementById("__invite_user_btn__").addEventListener("click", () => {
+	document.getElementById("__invite_user_btn__")?.addEventListener("click", () => {
 		const HOME = document.getElementById("__home");
 		const INVITE = document.getElementById("__invite_mail");
 		HOME.style.display = "none";
@@ -212,6 +234,13 @@ function button_utils() {
 			return;
 		}
 		ERR_ELE.innerText = data["message"];
+	})
+
+	document.getElementById("user-cont").addEventListener("click", async (e) => {
+		const ELE = e.target;
+		if (ELE.className === "__start_convo_btn") {
+			build_HTML_chat(ELE.getAttribute("user-id"), await start_convo_user(ELE.getAttribute("user-id")));
+		}
 	})
 
 }
